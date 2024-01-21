@@ -1,17 +1,20 @@
 #include <SoftwareSerial.h>
 
-//right
-#define trigPin_1 11;
-#define echoPin_1 12;
+//front
+//#define trigPin_1 13;
+//#define echoPin_1 12;
 //left
-#define trigPin_2 11;
+#define trigPin_2 13;
 #define echoPin_2 12;
-//low
-#define trigPin_3 11;
-#define echoPin_3 12;
-
+//right
+#define trigPin_3 9;
+#define echoPin_3 8;
 
 #define counterPin 2;
+#define counterPin 7;
+
+SoftwareSerial BT(6,5);
+SoftwareSerial mySerial(3, 4);
 
 int L_RPWM = 5;  // Digital/PWM pin 5 to the RPWM on the BTS7960
 int L_LPWM = 6;  // Digital/PWM pin 6 to the LPWM on the BTS7960
@@ -73,7 +76,7 @@ double angle_new;
 SoftwareSerial mySerial(2, 3); // RX, TX pins for SoftwareSerial
 
 void PID(){
-    
+    //
 }
 
 void counter() {
@@ -110,17 +113,17 @@ void xy_to_zl(){
     double z_max;
     double z_min;
 
-    double z_read1 = read_distance(trigPin_1,echoPin_1);   //mid
+    //double z_read1 = read_distance(trigPin_1,echoPin_1);   //mid
     double z_read2 = read_distance(trigPin_2,echoPin_2);   //left
     double z_read3 = read_distance(trigPin_3,echoPin_3);   //right
     
     z_read2 = (z_read2 != -1) ? sqrt(z_read2*z_read2 - x*x) : -1;
     z_read3 = (z_read2 != -1) ? sqrt(z_read2*z_read3 - x*x) : -1;
 
-    if(z_read1 <= z_max and z_read1 >= z_min and z_read1 != -1){
-        z = z_read1;
-    }
-    else if(z_read2 <= z_max and z_read2 >= z_min and z_read2 != -1){
+    //if(z_read1 <= z_max and z_read1 >= z_min and z_read1 != -1){
+    //    z = z_read1;
+    //}
+    if(z_read2 <= z_max and z_read2 >= z_min and z_read2 != -1){
         z = z_read2;
     }
     else if(z_read3 <= z_max and z_read3 >= z_min and z_read3 != -1){
@@ -161,7 +164,10 @@ void drive_car(){
 
 void stop_car(){
     analogWrite(L_RPWM, 0); 
+    analogWrite(L_LPWM, 0); 
+    analogWrite(R_RPWM, 0); 
     analogWrite(R_LPWM, 0);
+    delay(200);
 }
 
 
@@ -171,15 +177,20 @@ void esp32_update(){
     while(!mySerial.available()){}
     int x_r = int(mySerial.read());
     int y_r = int(mySerial.read());
-    if(x_r > 100){
-        x = double(x_r);
+    if(x_r >= 200){
+        x = double(x_r - 200);
         y = double(y_r);
     }else{
-        x = double(y_r);
+        x = double(y_r - 200);
         y = double(x_r);
     }
     xy_to_zl();
     zl_to_palor();
+    BT.print("(x: ");
+    BT.print(x);
+    BT.print(" ,y: ");
+    BT.print(y);
+    BT.println(")");
 }
 
 void path_calculate(){
@@ -197,6 +208,7 @@ void path_calculate(){
 void setup() {
     Serial.begin(9600); // Initialize the hardware serial port for debugging
     mySerial.begin(115200); // Initialize the software serial port
+    BT.begin(9600);
 
     pinMode(L_LPWM, OUTPUT);
     pinMode(L_RPWM, OUTPUT);
@@ -218,6 +230,8 @@ void setup() {
 
     pinMode(counterPin, INPUT);
     attachInterrupt(0, counter, FALLING);
+    pinMode(counterPin2, INPUT);
+    attachInterrupt(0, counter, FALLING);
     count = 0;
     rpm = 0;
     rpm_time = 0;
@@ -237,6 +251,4 @@ void loop() {
             first_time = 0;
         }
     }
-    
-  
 }
