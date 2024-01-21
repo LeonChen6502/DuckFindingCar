@@ -11,3 +11,4 @@
 * find the object coordinates
 * loop for t secs
 * update the trajectory every dt secs
+![image]()
