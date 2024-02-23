@@ -11,14 +11,14 @@ SoftwareSerial mySerial(3, 4);
 #define R_LPWM 11
 
 //left
-#define trigPin_1 5
-#define echoPin_1 6
+#define trigPin_1 3
+#define echoPin_1 4
 //front
 #define trigPin_2 8
 #define echoPin_2 9
 //right
-#define trigPin_3 11
-#define echoPin_3 12
+#define trigPin_3 12
+#define echoPin_3 13
 
 //PID
 #define Kp_pin 0
@@ -48,7 +48,7 @@ double Kd = 2;
 //______________
 double error = 0;
 double p_error = 0;
-double PID_P;
+double PID_P = 0;
 double PID_I = 0;
 double PID_D = 0;
 double bound = 50; //??
@@ -57,8 +57,8 @@ double dt = 1;   //update every one second
 
 //functions
 void drive_car(){
-  analogWrite(L_LPWM, base_speed - diff_speed);   //make sure it turns forward, if not try: L_RPWM
-  analogWrite(R_LPWM, base_speed + diff_speed);   //make sure it turns forward, if not try: R_RPWM
+  analogWrite(L_RPWM, base_speed - diff_speed);   //make sure it turns forward, if not try: L_RPWM
+  analogWrite(R_RPWM, base_speed + diff_speed);   //make sure it turns forward, if not try: R_RPWM
 }
 
 void PID(){
@@ -69,7 +69,8 @@ void PID(){
   error = theta;
   PID_P = error;
   PID_I += (error*dt); 
-  PID_D = (error − p_error) / dt;
+  double number = error - p_error;
+  PID_D = number / dt;
   p_error = error;
   
   if(PID_I > bound) PID_I = bound; 
@@ -89,20 +90,23 @@ void stop_car(){
 }
 
 void object_detection(){
-  d_left = left_distance.read();
-  delay(20);
-  d_front = front_distance.read();
-  delay(20);
-  d_right = right_distance.read();
+  d_left = (double) left_distance.read();
+  Serial.println(d_left);
+  delay(50);
+  d_front = (double)front_distance.read();
+  Serial.println(d_front);
+  delay(50);
+  d_right = (double)right_distance.read();
+  Serial.println(d_right);
 }
 
 //if no the sensor detects object, then turn around (left) till find object
 void find_object(){
   //turn around (left)
-  analogWrite(L_LPWM, 0);   //always set the other PWM Low !!!!
-  analogWrite(L_RPWM, 10);  //turn back  (or L_LPWM) ?
+  analogWrite(L_RPWM, 0);   //always set the other PWM Low !!!!
+  analogWrite(L_LPWM, 30);  //turn back  (or L_LPWM) ?
   analogWrite(R_LPWM, 0);   //always set the other PWM Low !!!!
-  analogWrite(R_RPWM, 10);  //turn forward   (or R_LPWM) ?
+  analogWrite(R_RPWM, 30);  //turn forward   (or R_LPWM) ?
   do{
     d_left = (double) left_distance.read();
     delay(20);
